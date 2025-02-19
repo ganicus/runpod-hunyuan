@@ -33,7 +33,10 @@ RUN apt-get update && \
 # Use Python 3.10 as default
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
-    python3.10 -m pip install --upgrade pip
+    curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3.10 get-pip.py && \
+    rm get-pip.py
+
 
 # Upgrade pip and install PyTorch
 RUN pip3 install --no-cache-dir --upgrade pip && \
@@ -164,8 +167,9 @@ RUN apt-get update && \
 # Use Python 3.10 as default
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
-    python3.10 -m pip install --upgrade pip
-
+    curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3.10 get-pip.py && \
+    rm get-pip.py
 
 # Install Jupyter and related packages in final stage
 RUN pip3 install --no-cache-dir \
