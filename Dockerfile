@@ -1,36 +1,41 @@
-# Build stage
+# Use Nvidia CUDA image with Ubuntu 20.04 as base
 FROM nvidia/cuda:12.4.0-devel-ubuntu20.04 as builder
 
-# Set non-interactive mode and timezone
+# Set non-interactive mode and timezone to avoid tzdata prompt
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends tzdata && \
     ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && \
     dpkg-reconfigure --frontend noninteractive tzdata
 
-# Install build dependencies more comprehensively
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
+# Install Python 3.10 and necessary build tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3.10-dev \
+    python3.10-distutils \
+    python3.10-venv \
     python3-pip \
-    python-is-python3 \
-    git \
-    build-essential \
-    python3-dev \
     curl \
     wget \
+    git \
+    build-essential \
     gcc \
     g++ \
     make \
     cmake \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    CC=gcc \
-    CXX=g++
+# Use Python 3.10 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
+    update-alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3 1
 
-# Install PyTorch and core dependencies
+# Upgrade pip and install PyTorch
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir torch==2.4 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
 
@@ -123,13 +128,28 @@ RUN for dir in */; do \
     done
 
 # Final stage
+# Final stage
 FROM nvidia/cuda:12.4.0-devel-ubuntu20.04
 
-# Install runtime dependencies including Python and curl
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
+# Set non-interactive mode and timezone
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends tzdata && \
+    ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && \
+    dpkg-reconfigure --frontend noninteractive tzdata
+
+# Install Python 3.10 and runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3.10-dev \
+    python3.10-distutils \
+    python3.10-venv \
     python3-pip \
-    python-is-python3 \
     git \
     ffmpeg \
     libgl1 \
@@ -140,6 +160,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nodejs \
     npm \
     && rm -rf /var/lib/apt/lists/*
+
+# Use Python 3.10 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
+    update-alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3 1 && \
+    pip3 install --no-cache-dir --upgrade pip
 
 # Install Jupyter and related packages in final stage
 RUN pip3 install --no-cache-dir \
