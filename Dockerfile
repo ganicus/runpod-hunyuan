@@ -1,6 +1,13 @@
 # Build stage
 FROM nvidia/cuda:12.4.0-devel-ubuntu20.04 as builder
 
+# Set non-interactive mode and timezone
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends tzdata && \
+    ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && \
+    dpkg-reconfigure --frontend noninteractive tzdata
+
 # Install build dependencies more comprehensively
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
