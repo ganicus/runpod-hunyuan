@@ -1,5 +1,5 @@
 # Build stage
-FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04 as builder
+FROM nvidia/cuda:12.4.0-devel-ubuntu20.04 as builder
 
 # Install build dependencies more comprehensively
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -26,6 +26,22 @@ ENV PYTHONUNBUFFERED=1 \
 # Install PyTorch and core dependencies
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir torch==2.4 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
+
+# Install SkyReel Dependencies 
+RUN pip3 install --no-cache-dir \
+    xformers==0.0.29.post1 \
+    optimum[quanto] \
+    transformers==4.46.3 \
+    accelerate==1.1.1 \
+    bitsandbytes==0.45.0 \
+    sageattention==1.0.6 \
+    git+https://github.com/huggingface/diffusers.git@464374fb87610c53b2cf81e08d3df628fada3ce4 \
+    git+https://github.com/Howe2018/ParaAttention.git \
+    torchao==0.7.0 \
+    imageio-ffmpeg==0.5.1 \
+    nvtx==0.2.10 \
+    opencv-python==4.10.0.84 \
+    imageio==2.36.1
 
 # Install Jupyter and related packages explicitly
 RUN pip3 install --no-cache-dir \
@@ -100,7 +116,7 @@ RUN for dir in */; do \
     done
 
 # Final stage
-FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+FROM nvidia/cuda:12.4.0-devel-ubuntu20.04
 
 # Install runtime dependencies including Python and curl
 RUN apt-get update && apt-get install -y --no-install-recommends \

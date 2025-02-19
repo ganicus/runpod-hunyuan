@@ -11,7 +11,10 @@ echo "**** CHECK NODES AND INSTALL IF NOT FOUND ****"
 /install_nodes.sh install_only
 
 echo "**** DOWNLOAD - INSTALLING MODELS ****"
-/download_models.sh
+# Download models if not skipped
+if [[ "${SKIP_MODEL_DOWNLOAD,,}" != "true" ]]; then     
+    /download_models.sh                                                                                                                                                                                   
+fi  
 
 # Create the ComfyUI directory in workspace if it doesn't exist
 mkdir -p /workspace/ComfyUI
