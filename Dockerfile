@@ -38,9 +38,13 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
     rm get-pip.py
 
 
-# Upgrade pip and install PyTorch
+# Install PyTorch, Torchvision, and Torchaudio with CUDA 12.4
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir torch==2.4 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
+    pip3 install --no-cache-dir \
+    torch==2.5.1+cu124 \
+    torchvision==0.20.1+cu124 \
+    torchaudio==2.5.1+cu124 \
+    --index-url https://download.pytorch.org/whl/cu124
 
 # Install SkyReel Dependencies 
 RUN pip3 install --no-cache-dir \
