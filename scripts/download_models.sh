@@ -43,30 +43,43 @@ download_file() {
     local dest="$2"
     local filename=$(basename "$dest")
     local model_type=$(basename $(dirname "$dest"))
-    
+    local retries=3
+    local count=0
+
     if [ -f "$dest" ] && [ -s "$dest" ]; then
         echo "✅ $filename already exists in $model_type"
         return 0
     fi
 
     echo "📥 Starting download: $filename"
-    
-    wget --progress=dot:mega \
-         -O "$dest.tmp" \
-         "$url" 2>&1 | \
-    stdbuf -o0 awk '
-    /[0-9]+%/ {
-        # Only print every 10% to reduce log spam
-        match($0, /([0-9]+)%/)
-        current = substr($0, RSTART, RLENGTH - 1)
-        if (current % 10 == 0 && current != last_printed) {
-            last_printed = current
-            printf "⏳ %s: %3d%%\n", FILENAME, current
-        }
-    }'
-    
-    mv "$dest.tmp" "$dest"
-    echo "✨ Completed: $filename"
+
+    while [ $count -lt $retries ]; do
+        wget --progress=dot:mega --max-redirect=5 -O "$dest.tmp" "$url" 2>&1 | \
+        stdbuf -o0 awk '
+        /[0-9]+%/ {
+            match($0, /([0-9]+)%/)
+            current = substr($0, RSTART, RLENGTH - 1)
+            if (current % 10 == 0 && current != last_printed) {
+                last_printed = current
+                printf "⏳ %s: %3d%%\n", FILENAME, current
+            }
+        }' | tee "wget_$filename.log"
+
+        # Ensure the file is successfully downloaded before renaming
+        if [ -f "$dest.tmp" ] && [ -s "$dest.tmp" ]; then
+            mv "$dest.tmp" "$dest"
+            echo "✨ Completed: $filename"
+            return 0
+        else
+            echo "⚠️ Download failed for $filename, retrying ($((count+1))/$retries)..."
+            rm -f "$dest.tmp"
+            count=$((count + 1))
+            sleep 5
+        fi
+    done
+
+    echo "❌ Failed to download $filename after $retries attempts"
+    return 1
 }
 
 # Function to download file with progress - Nice Progress on Terminal but not good on Runpod Logs
@@ -144,6 +157,7 @@ declare -A downloads=(
     ["${MODEL_DIR}/text_encoders/llava_llama3_fp8_scaled.safetensors"]="https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors"
     ["${MODEL_DIR}/vae/hunyuan_video_vae_bf16.safetensors"]="https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_vae_bf16.safetensors"
     ["${MODEL_DIR}/clip_vision/clip-vit-large-patch14.safetensors"]="https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/model.safetensors"
+    ["${MODEL_DIR}/diffusion_models/skyreels_hunyuan_i2v_bf16.safetensors"]=https://huggingface.co/Kijai/SkyReels-V1-Hunyuan_comfy/resolve/main/skyreels_hunyuan_i2v_bf16.safetensors
 )
 
 download_success=true
